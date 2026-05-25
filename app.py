@@ -13,7 +13,7 @@ if env_file.exists():
 from flask import Flask, render_template, request, jsonify
 from apscheduler.schedulers.background import BackgroundScheduler
 from database import init_db, save_article, get_articles, get_article, save_example
-from crawler import crawl, fetch_x_comments
+from crawler import crawl, fetch_social_reactions
 from corrector import correct
 
 app = Flask(__name__)
@@ -54,7 +54,7 @@ def analyze():
     news = data.get("news", "").strip()
     if not news:
         return jsonify({"error": "Missing news content"}), 400
-    x_comments = fetch_x_comments(news[:80])
+    x_comments = fetch_social_reactions(news[:80])
     result = correct(news, x_comments)
     return jsonify(result)
 

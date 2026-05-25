@@ -83,30 +83,50 @@ def get_bluesky_news(limit: int = 30) -> list[dict]:
 
 # ── X comments via DuckDuckGo HTML ────────────────────────────────────────────
 
-def fetch_x_comments(keyword: str, max_results: int = 8) -> str:
-    """Search X posts about a topic via DuckDuckGo HTML (no API key needed)."""
-    # Try full title first, then stripped-down keyword
-    queries = [
-        f"site:x.com {keyword}",
-        f"site:twitter.com {keyword}",
-        f"site:x.com {' '.join(keyword.split()[:5])}",  # first 5 words only
-    ]
-    for query in queries:
-        try:
-            resp = requests.get(
-                "https://html.duckduckgo.com/html/",
-                params={"q": query},
-                headers=HEADERS,
-                timeout=15,
-            )
-            soup = BeautifulSoup(resp.text, "html.parser")
-            snippets = [el.get_text(strip=True) for el in soup.select(".result__snippet")]
+def fetch_social_reactions(keyword: str, max_results: int = 8) -> str:
+    """
+    Fetch social reactions to a news topic from Reddit (free, no auth needed).
+    Falls back to Bluesky search if Reddit returns nothing.
+    """
+    # Try Reddit first
+    try:
+        resp = requests.get(
+            "https://www.reddit.com/search.json",
+            params={"q": keyword[:100], "sort": "new", "limit": 15, "type": "comment,link"},
+            headers={**HEADERS, "User-Agent": "news-corrector/1.0"},
+            timeout=12,
+        )
+        if resp.ok:
+            children = resp.json().get("data", {}).get("children", [])
+            snippets = []
+            for c in children:
+                d = c.get("data", {})
+                text = d.get("body") or d.get("selftext") or d.get("title") or ""
+                text = text.strip()
+                if len(text) > 40 and len(text) < 600:
+                    snippets.append(text)
+            if snippets:
+                return "\n---\n".join(snippets[:max_results])
+    except Exception as e:
+        print(f"Reddit search error: {e}")
+
+    # Fallback: Bluesky search (sort=latest, no auth needed)
+    try:
+        resp = requests.get(
+            "https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts",
+            params={"q": keyword[:80], "limit": 10, "sort": "latest"},
+            timeout=10,
+        )
+        if resp.ok:
+            posts = resp.json().get("posts", [])
+            snippets = [p.get("record", {}).get("text", "").strip() for p in posts]
             snippets = [s for s in snippets if len(s) > 30][:max_results]
             if snippets:
                 return "\n---\n".join(snippets)
-        except Exception as e:
-            print(f"X search error ({query[:40]}): {e}")
-    return "No X comments found."
+    except Exception as e:
+        print(f"Bluesky fallback error: {e}")
+
+    return ""
 
 
 # ── Article fetcher ───────────────────────────────────────────────────────────
@@ -170,7 +190,7 @@ def crawl(max_articles: int = 10) -> list[dict]:
             continue
 
         keyword = article["title"][:80]
-        x_comments = fetch_x_comments(keyword)
+        x_comments = fetch_social_reactions(keyword)
 
         articles.append({
             **article,
