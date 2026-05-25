@@ -1,0 +1,6 @@
+.env
+news.db
+examples.json
+__pycache__/
+*.pyc
+.DS_Store

@@ -1,0 +1,7 @@
+flask
+openai
+feedparser
+apscheduler
+ddgs
+requests
+beautifulsoup4

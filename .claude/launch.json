@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "news-corrector",
+      "runtimeExecutable": "/usr/bin/python3",
+      "runtimeArgs": ["/Users/yang/Desktop/blog/news/app.py"],
+      "port": 5000
+    }
+  ]
+}
