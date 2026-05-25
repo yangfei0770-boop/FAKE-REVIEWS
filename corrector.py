@@ -39,16 +39,18 @@ News: {news_content}
 """
 
 FAKE_REVIEW_PROMPT = """
-Based on the news and X (Twitter) comments below, identify the most prevalent false narrative.
+Identify the most prevalent false narrative being spread about this news story.
+Use the social media reactions if provided. If none, infer from the article's framing, likely public reception, and standard narrative patterns for this type of story.
+Do NOT ask for more information — always produce the three points.
 
 {examples_block}
 News: {news_content}
 
-X comments:
+Social media reactions:
 {x_comments}
 
 Output exactly three points:
-1. Fake review — one sentence, the dominant false claim circulating on X
+1. Fake review — one sentence, the dominant false claim circulating online
 2. Why it spreads — the emotional, nationalist, or political reason
 3. What it conceals — the truth this narrative buries
 """

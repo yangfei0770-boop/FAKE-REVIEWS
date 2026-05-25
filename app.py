@@ -74,6 +74,17 @@ def trigger_crawl():
     threading.Thread(target=run_crawl, daemon=True).start()
     return jsonify({"ok": True})
 
+@app.route("/debug/x")
+def debug_x():
+    import os
+    has_creds = bool(os.environ.get("X_USERNAME") and os.environ.get("X_PASSWORD"))
+    try:
+        from crawler import _fetch_x_tweets
+        tweets = _fetch_x_tweets("Trump", max_results=3)
+        return jsonify({"has_creds": has_creds, "tweet_count": len(tweets), "sample": tweets[:2]})
+    except Exception as e:
+        return jsonify({"has_creds": has_creds, "error": str(e)})
+
 # ── Start ─────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
