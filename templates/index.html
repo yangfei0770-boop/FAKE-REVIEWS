@@ -108,7 +108,16 @@
       font-size: 20px; font-weight: 700; color: #fff;
       line-height: 1.3; margin-bottom: 8px;
     }
-    .detail-meta { font-size: 12px; color: #444; margin-bottom: 32px; }
+    .detail-meta { font-size: 12px; color: #444; margin-bottom: 20px; }
+    .lang-toggle {
+      display: inline-flex; border: 1px solid #222; border-radius: 6px;
+      overflow: hidden; margin-bottom: 24px;
+    }
+    .lang-toggle button {
+      padding: 5px 14px; font-size: 12px; background: transparent;
+      border: none; color: #555; cursor: pointer; transition: all 0.15s;
+    }
+    .lang-toggle button.active { background: #fff; color: #000; font-weight: 600; }
     .detail-meta a { color: #555; text-decoration: underline; text-underline-offset: 3px; }
     .detail-meta a:hover { color: #999; }
 
@@ -231,22 +240,48 @@
     if (a) renderDetail(a);
   }
 
+  let detailLang = 'en';
+
   function renderDetail(a) {
     currentFakeReview = a.fake_review || '';
-    document.getElementById('detail').innerHTML = `
-      <div class="detail-title">${esc(a.title)}</div>
+    const hasZh = !!(a.fake_review_zh || a.correction_zh);
+    document.getElementById('detail').innerHTML = buildDetailHTML(
+      a.title, a.url, a.created_at ? a.created_at.slice(0,16) : '',
+      a.fake_review, a.correction, a.fake_review_zh, a.correction_zh, hasZh
+    );
+    detailLang = 'en';
+  }
+
+  function renderManualResult(data) {
+    currentFakeReview = data.fake_review || '';
+    const hasZh = !!(data.fake_review_zh || data.correction_zh);
+    document.getElementById('detail').innerHTML = buildDetailHTML(
+      'Manual submission', '', 'Just now',
+      data.fake_review, data.correction, data.fake_review_zh, data.correction_zh, hasZh
+    );
+    detailLang = 'en';
+  }
+
+  function buildDetailHTML(title, url, date, fakeEn, corrEn, fakeZh, corrZh, hasZh) {
+    return `
+      <div class="detail-title">${esc(title)}</div>
       <div class="detail-meta">
-        ${ a.url ? `<a href="${esc(a.url)}" target="_blank" rel="noopener">Source ↗</a> · ` : '' }
-        ${ a.created_at ? a.created_at.slice(0,16) : '' }
+        ${ url ? `<a href="${esc(url)}" target="_blank" rel="noopener">Source ↗</a> · ` : '' }${date}
       </div>
 
-      <div class="section-label fake-label">Fake Review — dominant narrative on X</div>
-      <div class="section-body">${esc(a.fake_review)}</div>
+      ${ hasZh ? `
+      <div class="lang-toggle">
+        <button id="lang-en" class="active" onclick="switchLang('en', ${JSON.stringify(fakeEn)}, ${JSON.stringify(corrEn)}, ${JSON.stringify(fakeZh)}, ${JSON.stringify(corrZh)})">EN</button>
+        <button id="lang-zh" onclick="switchLang('zh', ${JSON.stringify(fakeEn)}, ${JSON.stringify(corrEn)}, ${JSON.stringify(fakeZh)}, ${JSON.stringify(corrZh)})">中文</button>
+      </div>` : '' }
+
+      <div class="section-label fake-label" id="fake-label">Fake Review — dominant narrative on X</div>
+      <div class="section-body" id="fake-body">${esc(fakeEn)}</div>
 
       <hr>
 
-      <div class="section-label correction-label">Correction</div>
-      <div class="section-body correction-body">${esc(a.correction)}</div>
+      <div class="section-label correction-label" id="corr-label">Correction</div>
+      <div class="section-body correction-body" id="corr-body">${esc(corrEn)}</div>
 
       <hr>
 
@@ -264,34 +299,21 @@
     `;
   }
 
-  function renderManualResult(data) {
-    currentFakeReview = data.fake_review || '';
-    document.getElementById('detail').innerHTML = `
-      <div class="detail-title">Manual submission</div>
-      <div class="detail-meta">Just now</div>
-
-      <div class="section-label fake-label">Fake Review — dominant narrative on X</div>
-      <div class="section-body">${esc(data.fake_review)}</div>
-
-      <hr>
-
-      <div class="section-label correction-label">Correction</div>
-      <div class="section-body correction-body">${esc(data.correction)}</div>
-
-      <hr>
-
-      <div class="feedback-label">Was the fake review identified correctly?</div>
-      <div class="feedback-btns">
-        <button class="fb-btn" id="fb-good" onclick="markGood()">✓ Correct</button>
-        <button class="fb-btn" id="fb-wrong" onclick="showFbForm()">✗ Wrong</button>
-      </div>
-      <div class="fb-form" id="fb-form">
-        <input class="fb-input" id="fb-correct" placeholder="The real fake review should be…">
-        <input class="fb-input" id="fb-reason" placeholder="Why? (optional)">
-        <button class="save-btn" onclick="saveFeedback()">Save correction</button>
-      </div>
-      <div class="saved-msg" id="fb-saved">✓ Saved — will be used next time</div>
-    `;
+  function switchLang(lang, fakeEn, corrEn, fakeZh, corrZh) {
+    detailLang = lang;
+    document.getElementById('lang-en').className = lang === 'en' ? 'active' : '';
+    document.getElementById('lang-zh').className = lang === 'zh' ? 'active' : '';
+    if (lang === 'zh') {
+      document.getElementById('fake-label').textContent = 'Fake Review — X 上的主流叙事';
+      document.getElementById('fake-body').textContent = fakeZh || fakeEn;
+      document.getElementById('corr-label').textContent = '矫正';
+      document.getElementById('corr-body').textContent = corrZh || corrEn;
+    } else {
+      document.getElementById('fake-label').textContent = 'Fake Review — dominant narrative on X';
+      document.getElementById('fake-body').textContent = fakeEn;
+      document.getElementById('corr-label').textContent = 'Correction';
+      document.getElementById('corr-body').textContent = corrEn;
+    }
   }
 
   function markGood() {

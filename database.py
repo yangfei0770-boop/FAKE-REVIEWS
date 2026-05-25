@@ -21,9 +21,17 @@ def init_db():
                 bluesky_comments TEXT,
                 fake_review TEXT,
                 correction TEXT,
+                fake_review_zh TEXT,
+                correction_zh TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
+        # Migrate existing tables
+        for col in ["fake_review_zh", "correction_zh"]:
+            try:
+                conn.execute(f"ALTER TABLE articles ADD COLUMN {col} TEXT")
+            except Exception:
+                pass
         conn.execute("""
             CREATE TABLE IF NOT EXISTS examples (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -35,13 +43,13 @@ def init_db():
             )
         """)
 
-def save_article(url, title, content, source, lang, bluesky_comments, fake_review, correction):
+def save_article(url, title, content, source, lang, bluesky_comments, fake_review, correction, fake_review_zh="", correction_zh=""):
     with get_conn() as conn:
         conn.execute("""
             INSERT OR IGNORE INTO articles
-            (url, title, content, source, lang, bluesky_comments, fake_review, correction)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (url, title, content, source, lang, bluesky_comments, fake_review, correction))
+            (url, title, content, source, lang, bluesky_comments, fake_review, correction, fake_review_zh, correction_zh)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (url, title, content, source, lang, bluesky_comments, fake_review, correction, fake_review_zh, correction_zh))
 
 def url_exists(url):
     with get_conn() as conn:

@@ -31,6 +31,8 @@ def run_crawl():
             bluesky_comments=a.get("x_comments", ""),
             fake_review=result["fake_review"],
             correction=result["correction"],
+            fake_review_zh=result.get("fake_review_zh", ""),
+            correction_zh=result.get("correction_zh", ""),
         )
     print(f"[crawl] Done — {len(articles)} articles saved.")
 

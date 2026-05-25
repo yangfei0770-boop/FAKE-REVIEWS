@@ -97,6 +97,27 @@ Write the correction:
 Under 180 words.
 """
 
+TRANSLATE_PROMPT = """
+你是杨飞，《原初种族》的作者。把以下英文内容翻译成中文，用你自己的语气——不是正式翻译腔，是你平时写作的语气。
+
+━━ 你的语气特征 ━━
+用破折号急转弯（——）、反问句、短句收尾、具体数字
+禁止："值得深思""令人深思"、学术腔、和稀泥
+
+Fake Review（X上的主流叙事）：
+{fake_review}
+
+矫正评论：
+{correction}
+
+输出格式：
+【Fake Review】
+（翻译）
+
+【矫正】
+（翻译，保持杨飞语气）
+"""
+
 # ── Core ──────────────────────────────────────────────────────────────────────
 
 def chat(prompt: str) -> str:
@@ -125,6 +146,18 @@ def build_examples_block() -> str:
     return "\n".join(lines) + "\n"
 
 
+def translate_to_zh(fake_review: str, correction: str) -> tuple:
+    result = chat(TRANSLATE_PROMPT.format(fake_review=fake_review, correction=correction))
+    fake_zh, correction_zh = "", ""
+    if "【矫正】" in result:
+        parts = result.split("【矫正】")
+        fake_zh = parts[0].replace("【Fake Review】", "").strip()
+        correction_zh = parts[1].strip()
+    else:
+        correction_zh = result
+    return fake_zh, correction_zh
+
+
 def correct(news_content: str, x_comments: str) -> dict:
     examples_block = build_examples_block()
     analysis = chat(ANALYSIS_PROMPT.format(news_content=news_content))
@@ -138,4 +171,10 @@ def correct(news_content: str, x_comments: str) -> dict:
         analysis=analysis,
         news_content=news_content,
     ))
-    return {"fake_review": fake_review, "correction": correction}
+    fake_review_zh, correction_zh = translate_to_zh(fake_review, correction)
+    return {
+        "fake_review": fake_review,
+        "correction": correction,
+        "fake_review_zh": fake_review_zh,
+        "correction_zh": correction_zh,
+    }

@@ -9,7 +9,24 @@ BLUESKY_FEEDS = [
     "at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot",
     "at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/hot-classic",
     "at://did:plc:tenurhgjptubkk5zf5qhi3og/app.bsky.feed.generator/catch-up",
-    "at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/with-friends",
+    "at://did:plc:wqowuobffl66jv3zn5bpbhbs/app.bsky.feed.generator/the-algorithm",
+    "at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/bsky-team",
+]
+
+# Keywords that signal relevant content
+RELEVANT_KEYWORDS = [
+    "politic", "sanction", "war", "election", "government", "congress", "senate",
+    "china", "russia", "iran", "taiwan", "ukraine", "nato",
+    "women", "gender", "abortion", "rights", "protest",
+    "tech", "ai", "chip", "nuclear", "climate", "economy", "inflation",
+    "trump", "biden", "court", "supreme", "law", "bill", "vote",
+    "killed", "attack", "bomb", "military", "army", "troops",
+    "immigrant", "refugee", "border", "detention",
+]
+
+SKIP_DOMAINS = [
+    "reddit.com", "youtube.com", "spotify.com", "twitch.tv",
+    "instagram.com", "tiktok.com", "patreon.com",
 ]
 
 def get_bluesky_news(limit: int = 30) -> list[dict]:
@@ -41,12 +58,22 @@ def get_bluesky_news(limit: int = 30) -> list[dict]:
             if not external:
                 continue
             url = external.get("uri", "")
+            title = external.get("title", "")
             if not url.startswith("http") or url in seen:
+                continue
+            # Skip non-news domains
+            if any(d in url for d in SKIP_DOMAINS):
+                continue
+            # Only keep articles with relevant keywords in title
+            title_lower = title.lower()
+            post_text = record.get("text", "").lower()
+            combined = title_lower + " " + post_text
+            if not any(kw in combined for kw in RELEVANT_KEYWORDS):
                 continue
             seen.add(url)
             results.append({
                 "url": url,
-                "title": external.get("title", ""),
+                "title": title,
                 "likes": post.get("likeCount", 0),
             })
 
