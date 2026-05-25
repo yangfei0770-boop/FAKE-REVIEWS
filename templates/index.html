@@ -3,194 +3,385 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Corrector</title>
+  <title>Fake Review</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #1c1c1e;
+      --surface: #2c2c2e;
+      --surface2: #3a3a3c;
+      --border: rgba(255,255,255,0.08);
+      --text: #f5f5f7;
+      --text-2: #98989d;
+      --text-3: #636366;
+      --accent: #e8865a;
+      --green: #34c759;
+      --radius: 12px;
+    }
+
     body {
-      font-family: -apple-system, "Helvetica Neue", sans-serif;
-      background: #0f0f0f; color: #e8e8e8;
-      min-height: 100vh;
+      font-family: -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
-    a { color: inherit; text-decoration: none; }
 
-    /* Header */
+    /* ── Header ── */
     header {
-      border-bottom: 1px solid #1e1e1e;
-      padding: 0 32px; height: 52px;
-      display: flex; align-items: center; gap: 16px;
-      position: sticky; top: 0; background: #0f0f0f; z-index: 10;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      gap: 12px;
     }
-    .site-title { font-size: 15px; font-weight: 700; color: #fff; letter-spacing: -0.01em; }
-    .site-sub { font-size: 12px; color: #444; }
-    .header-right { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+
+    .logo {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+
+    .logo span { color: var(--accent); }
+
+    header .spacer { flex: 1; }
+
     .crawl-btn {
-      padding: 6px 14px; font-size: 12px;
-      background: transparent; border: 1px solid #2a2a2a;
-      border-radius: 6px; color: #555; cursor: pointer; transition: all 0.15s;
+      height: 32px;
+      padding: 0 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-2);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
     }
-    .crawl-btn:hover { border-color: #444; color: #ccc; }
-    .crawl-btn.running { border-color: #4ade80; color: #4ade80; }
+    .crawl-btn:hover { background: var(--surface2); color: var(--text); }
+    .crawl-btn.running { color: var(--green); border-color: rgba(52,199,89,0.3); }
 
-    /* Layout */
-    .layout {
+    /* ── Body layout ── */
+    .body {
       display: grid;
-      grid-template-columns: 420px 1fr;
-      max-width: 1280px; margin: 0 auto;
-      min-height: calc(100vh - 52px);
+      grid-template-columns: 320px 1fr;
+      flex: 1;
+      overflow: hidden;
     }
 
-    /* Left: article list */
+    /* ── Sidebar ── */
     .sidebar {
-      border-right: 1px solid #1e1e1e;
-      display: flex; flex-direction: column;
-      height: calc(100vh - 52px);
-      position: sticky; top: 52px;
-    }
-    .article-list {
-      flex: 1; overflow-y: auto;
-      padding: 16px;
-    }
-    .list-empty {
-      color: #333; font-size: 13px;
-      text-align: center; padding: 48px 0;
-    }
-    .article-card {
-      padding: 16px; border-radius: 8px;
-      cursor: pointer; transition: background 0.1s;
-      border: 1px solid transparent;
-      margin-bottom: 4px;
-    }
-    .article-card:hover { background: #141414; }
-    .article-card.active { background: #161616; border-color: #2a2a2a; }
-    .card-date { font-size: 11px; color: #444; margin-bottom: 6px; }
-    .card-title { font-size: 13px; font-weight: 600; color: #ccc; line-height: 1.4; margin-bottom: 8px; }
-    .card-preview {
-      font-size: 12px; color: #555; line-height: 1.5;
-      display: -webkit-box; -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical; overflow: hidden;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
 
-    /* Manual submit */
-    .submit-area {
-      border-top: 1px solid #1e1e1e;
-      padding: 16px;
+    .article-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
     }
-    .submit-label { font-size: 11px; color: #444; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
-    textarea {
-      width: 100%; background: #111; border: 1px solid #222;
-      border-radius: 7px; color: #e8e8e8; font-size: 13px;
-      line-height: 1.6; padding: 10px 12px; font-family: inherit;
-      outline: none; resize: none; min-height: 72px;
+
+    .article-list::-webkit-scrollbar { width: 4px; }
+    .article-list::-webkit-scrollbar-track { background: transparent; }
+    .article-list::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 2px; }
+
+    .empty-state {
+      padding: 40px 20px;
+      text-align: center;
+      color: var(--text-3);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .article-card {
+      padding: 12px 14px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background 0.1s;
+      margin-bottom: 2px;
+    }
+    .article-card:hover { background: var(--surface); }
+    .article-card.active { background: var(--surface); }
+
+    .card-date {
+      font-size: 11px;
+      color: var(--text-3);
+      margin-bottom: 5px;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.45;
+      margin-bottom: 6px;
+    }
+
+    .card-snippet {
+      font-size: 12px;
+      color: var(--text-3);
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* ── Submit box ── */
+    .submit-box {
+      padding: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .submit-box textarea {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.6;
+      padding: 10px 12px;
+      font-family: inherit;
+      outline: none;
+      resize: none;
+      min-height: 68px;
       transition: border-color 0.15s;
     }
-    textarea:focus { border-color: #333; }
-    textarea::placeholder { color: #333; }
-    .submit-row { display: flex; justify-content: flex-end; margin-top: 8px; }
-    .run-btn {
-      padding: 8px 20px; background: #fff; color: #000;
-      border: none; border-radius: 7px; font-size: 13px;
-      font-weight: 600; cursor: pointer; transition: opacity 0.15s;
-    }
-    .run-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .submit-box textarea:focus { border-color: rgba(255,255,255,0.2); }
+    .submit-box textarea::placeholder { color: var(--text-3); }
 
-    /* Right: detail */
+    .submit-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+
+    .run-btn {
+      height: 32px;
+      padding: 0 16px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity 0.15s;
+    }
+    .run-btn:hover { opacity: 0.88; }
+    .run-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    /* ── Detail panel ── */
     .detail {
-      padding: 36px 40px;
       overflow-y: auto;
-      max-height: calc(100vh - 52px);
+      padding: 32px 40px;
     }
+
+    .detail::-webkit-scrollbar { width: 4px; }
+    .detail::-webkit-scrollbar-track { background: transparent; }
+    .detail::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 2px; }
+
     .detail-placeholder {
-      color: #2a2a2a; font-size: 13px;
-      display: flex; align-items: center; justify-content: center;
-      height: 200px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-3);
+      font-size: 14px;
     }
+
     .detail-title {
-      font-size: 20px; font-weight: 700; color: #fff;
-      line-height: 1.3; margin-bottom: 8px;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.3;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+      max-width: 680px;
     }
-    .detail-meta { font-size: 12px; color: #444; margin-bottom: 20px; }
+
+    .detail-meta {
+      font-size: 12px;
+      color: var(--text-3);
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .detail-meta a {
+      color: var(--text-3);
+      text-decoration: none;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1px;
+      transition: color 0.15s;
+    }
+    .detail-meta a:hover { color: var(--text-2); }
+
+    /* Lang toggle */
     .lang-toggle {
-      display: inline-flex; border: 1px solid #222; border-radius: 6px;
-      overflow: hidden; margin-bottom: 24px;
+      display: inline-flex;
+      background: var(--surface);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 2px;
+      margin-bottom: 28px;
     }
     .lang-toggle button {
-      padding: 5px 14px; font-size: 12px; background: transparent;
-      border: none; color: #555; cursor: pointer; transition: all 0.15s;
+      height: 26px;
+      padding: 0 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      border: none;
+      background: transparent;
+      color: var(--text-3);
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
     }
-    .lang-toggle button.active { background: #fff; color: #000; font-weight: 600; }
-    .detail-meta a { color: #555; text-decoration: underline; text-underline-offset: 3px; }
-    .detail-meta a:hover { color: #999; }
+    .lang-toggle button.active {
+      background: var(--surface2);
+      color: var(--text);
+    }
 
-    .section-label {
-      font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
-      text-transform: uppercase; margin-bottom: 12px;
+    /* Content blocks */
+    .block { max-width: 680px; margin-bottom: 28px; }
+
+    .block-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
     }
-    .fake-label { color: #555; }
-    .correction-label { color: #4ade80; }
-    .section-body {
-      font-size: 15px; line-height: 1.8; color: #999;
-      white-space: pre-wrap; margin-bottom: 32px;
+    .label-fake { color: var(--text-3); }
+    .label-correction { color: var(--accent); }
+
+    .block-body {
+      font-size: 15px;
+      line-height: 1.8;
+      color: var(--text-2);
+      white-space: pre-wrap;
     }
-    .correction-body { color: #e8e8e8; }
-    hr { border: none; border-top: 1px solid #1e1e1e; margin: 28px 0; }
+    .block-body.highlight { color: var(--text); }
+
+    .divider {
+      max-width: 680px;
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
 
     /* Feedback */
-    .feedback-label { font-size: 11px; color: #444; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 12px; }
-    .feedback-btns { display: flex; gap: 8px; margin-bottom: 16px; }
-    .fb-btn {
-      padding: 6px 16px; border-radius: 6px; font-size: 12px;
-      border: 1px solid #222; background: transparent;
-      color: #666; cursor: pointer; transition: all 0.15s;
+    .feedback-section { max-width: 680px; }
+    .feedback-label {
+      font-size: 12px;
+      color: var(--text-3);
+      margin-bottom: 10px;
     }
-    .fb-btn:hover { border-color: #444; color: #bbb; }
-    .fb-btn.good { border-color: #4ade80; color: #4ade80; }
+    .feedback-btns { display: flex; gap: 8px; margin-bottom: 14px; }
+    .fb-btn {
+      height: 30px;
+      padding: 0 14px;
+      border-radius: 7px;
+      font-size: 12px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-3);
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .fb-btn:hover { background: var(--surface); color: var(--text-2); }
+    .fb-btn.confirmed { border-color: rgba(52,199,89,0.4); color: var(--green); }
+
     .fb-form { display: none; flex-direction: column; gap: 8px; }
-    .fb-form.visible { display: flex; }
+    .fb-form.open { display: flex; }
+
     .fb-input {
-      width: 100%; background: #111; border: 1px solid #222;
-      border-radius: 7px; color: #e8e8e8; font-size: 13px;
-      padding: 9px 12px; font-family: inherit; outline: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 13px;
+      padding: 9px 12px;
+      font-family: inherit;
+      outline: none;
       transition: border-color 0.15s;
     }
-    .fb-input:focus { border-color: #333; }
-    .fb-input::placeholder { color: #333; }
+    .fb-input:focus { border-color: rgba(255,255,255,0.2); }
+    .fb-input::placeholder { color: var(--text-3); }
+
     .save-btn {
-      align-self: flex-end; padding: 7px 18px;
-      background: #4ade80; color: #000; border: none;
-      border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;
+      align-self: flex-end;
+      height: 30px;
+      padding: 0 16px;
+      background: var(--green);
+      color: #000;
+      border: none;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
     }
-    .saved-msg { font-size: 12px; color: #4ade80; margin-top: 8px; display: none; }
+
+    .saved-note {
+      font-size: 12px;
+      color: var(--green);
+      display: none;
+      margin-top: 6px;
+    }
 
     /* Loading */
-    .loading-overlay {
-      display: none; position: fixed; inset: 0;
-      background: rgba(15,15,15,0.85); backdrop-filter: blur(6px);
-      align-items: center; justify-content: center; z-index: 100;
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(28,28,30,0.8);
+      backdrop-filter: blur(8px);
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
     }
-    .loading-overlay.on { display: flex; }
+    .overlay.on { display: flex; }
     .spinner {
-      width: 28px; height: 28px; border: 2px solid #1e1e1e;
-      border-top-color: #fff; border-radius: 50%;
-      animation: spin 0.75s linear infinite;
+      width: 24px; height: 24px;
+      border: 2px solid var(--surface2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .loading-text { font-size: 13px; color: #555; margin-top: 14px; }
+    .loading-label {
+      font-size: 13px;
+      color: var(--text-3);
+      margin-top: 12px;
+    }
     .loading-box { text-align: center; }
   </style>
 </head>
 <body>
 
 <header>
-  <span class="site-title">The Corrector</span>
-  <span class="site-sub">Bluesky news · X fake reviews · Yang Fei's voice</span>
-  <div class="header-right">
-    <button class="crawl-btn" id="crawl-btn" onclick="triggerCrawl()">Fetch new articles</button>
-  </div>
+  <div class="logo">Fake <span>Review</span></div>
+  <div class="spacer"></div>
+  <button class="crawl-btn" id="crawl-btn" onclick="triggerCrawl()">Fetch articles</button>
 </header>
 
-<div class="layout">
+<div class="body">
 
-  <!-- Sidebar -->
   <div class="sidebar">
     <div class="article-list" id="article-list">
       {% if articles %}
@@ -198,34 +389,32 @@
         <div class="article-card" id="card-{{ a.id }}" onclick="selectArticle({{ a.id }})">
           <div class="card-date">{{ a.created_at[:16] if a.created_at else '' }}</div>
           <div class="card-title">{{ a.title }}</div>
-          <div class="card-preview">{{ a.correction }}</div>
+          <div class="card-snippet">{{ a.correction }}</div>
         </div>
         {% endfor %}
       {% else %}
-        <div class="list-empty">No articles yet.<br>Click "Fetch new articles" to start.</div>
+        <div class="empty-state">No articles yet.<br>Click "Fetch articles" to start.</div>
       {% endif %}
     </div>
 
-    <div class="submit-area">
-      <div class="submit-label">Submit manually</div>
-      <textarea id="manual-news" placeholder="Paste news content here…"></textarea>
+    <div class="submit-box">
+      <textarea id="manual-news" placeholder="Or paste a news article to run manually…"></textarea>
       <div class="submit-row">
         <button class="run-btn" id="run-btn" onclick="submitManual()">Run</button>
       </div>
     </div>
   </div>
 
-  <!-- Detail panel -->
   <div class="detail" id="detail">
-    <div class="detail-placeholder">← Select an article</div>
+    <div class="detail-placeholder">Select an article</div>
   </div>
 
 </div>
 
-<div class="loading-overlay" id="loading">
+<div class="overlay" id="overlay">
   <div class="loading-box">
     <div class="spinner"></div>
-    <div class="loading-text" id="loading-text">Analyzing…</div>
+    <div class="loading-label">Analyzing…</div>
   </div>
 </div>
 
@@ -237,101 +426,95 @@
     document.querySelectorAll('.article-card').forEach(el => el.classList.remove('active'));
     document.getElementById('card-' + id)?.classList.add('active');
     const a = articles.find(x => x.id === id);
-    if (a) renderDetail(a);
+    if (a) render(a.title, a.url, a.created_at?.slice(0,16) || '',
+                  a.fake_review, a.correction, a.fake_review_zh, a.correction_zh);
   }
 
-  let detailLang = 'en';
+  function render(title, url, date, fakeEn, corrEn, fakeZh, corrZh) {
+    currentFakeReview = fakeEn || '';
+    const hasZh = !!(fakeZh || corrZh);
+    const fe = fakeEn || '', ce = corrEn || '', fz = fakeZh || '', cz = corrZh || '';
 
-  function renderDetail(a) {
-    currentFakeReview = a.fake_review || '';
-    const hasZh = !!(a.fake_review_zh || a.correction_zh);
-    document.getElementById('detail').innerHTML = buildDetailHTML(
-      a.title, a.url, a.created_at ? a.created_at.slice(0,16) : '',
-      a.fake_review, a.correction, a.fake_review_zh, a.correction_zh, hasZh
-    );
-    detailLang = 'en';
-  }
-
-  function renderManualResult(data) {
-    currentFakeReview = data.fake_review || '';
-    const hasZh = !!(data.fake_review_zh || data.correction_zh);
-    document.getElementById('detail').innerHTML = buildDetailHTML(
-      'Manual submission', '', 'Just now',
-      data.fake_review, data.correction, data.fake_review_zh, data.correction_zh, hasZh
-    );
-    detailLang = 'en';
-  }
-
-  function buildDetailHTML(title, url, date, fakeEn, corrEn, fakeZh, corrZh, hasZh) {
-    return `
+    document.getElementById('detail').innerHTML = `
       <div class="detail-title">${esc(title)}</div>
       <div class="detail-meta">
-        ${ url ? `<a href="${esc(url)}" target="_blank" rel="noopener">Source ↗</a> · ` : '' }${date}
+        ${url ? `<a href="${esc(url)}" target="_blank" rel="noopener">Source ↗</a>` : ''}
+        ${date ? `<span>${date}</span>` : ''}
       </div>
 
-      ${ hasZh ? `
-      <div class="lang-toggle">
-        <button id="lang-en" class="active" onclick="switchLang('en', ${JSON.stringify(fakeEn)}, ${JSON.stringify(corrEn)}, ${JSON.stringify(fakeZh)}, ${JSON.stringify(corrZh)})">EN</button>
-        <button id="lang-zh" onclick="switchLang('zh', ${JSON.stringify(fakeEn)}, ${JSON.stringify(corrEn)}, ${JSON.stringify(fakeZh)}, ${JSON.stringify(corrZh)})">中文</button>
-      </div>` : '' }
+      ${hasZh ? `
+        <div class="lang-toggle">
+          <button id="btn-en" class="active"
+            onclick="switchLang('en','${btoa(encodeURIComponent(fe))}','${btoa(encodeURIComponent(ce))}','${btoa(encodeURIComponent(fz))}','${btoa(encodeURIComponent(cz))}')">EN</button>
+          <button id="btn-zh"
+            onclick="switchLang('zh','${btoa(encodeURIComponent(fe))}','${btoa(encodeURIComponent(ce))}','${btoa(encodeURIComponent(fz))}','${btoa(encodeURIComponent(cz))}')">中文</button>
+        </div>` : ''}
 
-      <div class="section-label fake-label" id="fake-label">Fake Review — dominant narrative on X</div>
-      <div class="section-body" id="fake-body">${esc(fakeEn)}</div>
-
-      <hr>
-
-      <div class="section-label correction-label" id="corr-label">Correction</div>
-      <div class="section-body correction-body" id="corr-body">${esc(corrEn)}</div>
-
-      <hr>
-
-      <div class="feedback-label">Was the fake review identified correctly?</div>
-      <div class="feedback-btns">
-        <button class="fb-btn" id="fb-good" onclick="markGood()">✓ Correct</button>
-        <button class="fb-btn" id="fb-wrong" onclick="showFbForm()">✗ Wrong</button>
+      <div class="block">
+        <div class="block-label label-fake" id="label-fake">Fake Review — dominant narrative on X</div>
+        <div class="block-body" id="body-fake">${esc(fe)}</div>
       </div>
-      <div class="fb-form" id="fb-form">
-        <input class="fb-input" id="fb-correct" placeholder="The real fake review should be…">
-        <input class="fb-input" id="fb-reason" placeholder="Why? (optional)">
-        <button class="save-btn" onclick="saveFeedback()">Save correction</button>
+
+      <hr class="divider">
+
+      <div class="block">
+        <div class="block-label label-correction" id="label-corr">Correction</div>
+        <div class="block-body highlight" id="body-corr">${esc(ce)}</div>
       </div>
-      <div class="saved-msg" id="fb-saved">✓ Saved — will be used next time</div>
+
+      <hr class="divider">
+
+      <div class="feedback-section">
+        <div class="feedback-label">Was the fake review identified correctly?</div>
+        <div class="feedback-btns">
+          <button class="fb-btn" id="fb-good" onclick="markGood()">✓ Correct</button>
+          <button class="fb-btn" id="fb-wrong" onclick="openFbForm()">✗ Wrong</button>
+        </div>
+        <div class="fb-form" id="fb-form">
+          <input class="fb-input" id="fb-correct" placeholder="The real fake review should be…">
+          <input class="fb-input" id="fb-reason" placeholder="Why? (optional)">
+          <button class="save-btn" onclick="saveFeedback()">Save</button>
+        </div>
+        <div class="saved-note" id="fb-saved">✓ Saved — will inform next run</div>
+      </div>
     `;
   }
 
-  function switchLang(lang, fakeEn, corrEn, fakeZh, corrZh) {
-    detailLang = lang;
-    document.getElementById('lang-en').className = lang === 'en' ? 'active' : '';
-    document.getElementById('lang-zh').className = lang === 'zh' ? 'active' : '';
+  function switchLang(lang, fe64, ce64, fz64, cz64) {
+    const fe = decodeURIComponent(atob(fe64));
+    const ce = decodeURIComponent(atob(ce64));
+    const fz = decodeURIComponent(atob(fz64));
+    const cz = decodeURIComponent(atob(cz64));
+    document.getElementById('btn-en').className = lang === 'en' ? 'active' : '';
+    document.getElementById('btn-zh').className = lang === 'zh' ? 'active' : '';
     if (lang === 'zh') {
-      document.getElementById('fake-label').textContent = 'Fake Review — X 上的主流叙事';
-      document.getElementById('fake-body').textContent = fakeZh || fakeEn;
-      document.getElementById('corr-label').textContent = '矫正';
-      document.getElementById('corr-body').textContent = corrZh || corrEn;
+      document.getElementById('label-fake').textContent = 'Fake Review — X 上的主流叙事';
+      document.getElementById('body-fake').textContent = fz || fe;
+      document.getElementById('label-corr').textContent = '矫正';
+      document.getElementById('body-corr').textContent = cz || ce;
     } else {
-      document.getElementById('fake-label').textContent = 'Fake Review — dominant narrative on X';
-      document.getElementById('fake-body').textContent = fakeEn;
-      document.getElementById('corr-label').textContent = 'Correction';
-      document.getElementById('corr-body').textContent = corrEn;
+      document.getElementById('label-fake').textContent = 'Fake Review — dominant narrative on X';
+      document.getElementById('body-fake').textContent = fe;
+      document.getElementById('label-corr').textContent = 'Correction';
+      document.getElementById('body-corr').textContent = ce;
     }
   }
 
   function markGood() {
-    document.getElementById('fb-good').className = 'fb-btn good';
+    document.getElementById('fb-good').className = 'fb-btn confirmed';
     document.getElementById('fb-form').className = 'fb-form';
   }
-  function showFbForm() {
+  function openFbForm() {
     document.getElementById('fb-good').className = 'fb-btn';
-    document.getElementById('fb-form').className = 'fb-form visible';
+    document.getElementById('fb-form').className = 'fb-form open';
   }
   async function saveFeedback() {
     const correct = document.getElementById('fb-correct').value.trim();
-    const reason = document.getElementById('fb-reason').value.trim();
     if (!correct) return;
     await fetch('/feedback', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({wrong: currentFakeReview, correct, reason}),
+      body: JSON.stringify({wrong: currentFakeReview, correct, reason: document.getElementById('fb-reason').value.trim()}),
     });
     document.getElementById('fb-saved').style.display = 'block';
     document.getElementById('fb-form').className = 'fb-form';
@@ -340,41 +523,31 @@
   async function submitManual() {
     const news = document.getElementById('manual-news').value.trim();
     if (!news) return;
-    showLoading('Analyzing…');
+    document.getElementById('overlay').className = 'overlay on';
+    document.getElementById('run-btn').disabled = true;
     try {
       const resp = await fetch('/analyze', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        method: 'POST', headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({news}),
       });
-      const data = await resp.json();
-      renderManualResult(data);
+      const d = await resp.json();
+      render('Manual submission', '', 'Just now', d.fake_review, d.correction, d.fake_review_zh, d.correction_zh);
     } catch(e) { alert('Error: ' + e.message); }
-    finally { hideLoading(); }
+    finally {
+      document.getElementById('overlay').className = 'overlay';
+      document.getElementById('run-btn').disabled = false;
+    }
   }
 
   async function triggerCrawl() {
     const btn = document.getElementById('crawl-btn');
-    btn.className = 'crawl-btn running';
-    btn.textContent = 'Fetching…';
-    try {
-      await fetch('/crawl', {method: 'POST'});
-      btn.textContent = 'Running in background…';
-      setTimeout(() => { btn.className = 'crawl-btn'; btn.textContent = 'Fetch new articles'; }, 5000);
-    } catch(e) { btn.className = 'crawl-btn'; btn.textContent = 'Fetch new articles'; }
+    btn.className = 'crawl-btn running'; btn.textContent = 'Fetching…';
+    await fetch('/crawl', {method: 'POST'});
+    setTimeout(() => { btn.className = 'crawl-btn'; btn.textContent = 'Fetch articles'; }, 4000);
   }
 
-  function showLoading(msg) {
-    document.getElementById('loading-text').textContent = msg;
-    document.getElementById('loading').className = 'loading-overlay on';
-    document.getElementById('run-btn').disabled = true;
-  }
-  function hideLoading() {
-    document.getElementById('loading').className = 'loading-overlay';
-    document.getElementById('run-btn').disabled = false;
-  }
   function esc(s) {
-    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
   document.addEventListener('keydown', e => {
