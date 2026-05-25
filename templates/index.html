@@ -1,377 +1,332 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>矫正器</title>
+  <title>The Corrector</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
+      font-family: -apple-system, "Helvetica Neue", sans-serif;
       background: #0f0f0f; color: #e8e8e8;
       min-height: 100vh;
     }
     a { color: inherit; text-decoration: none; }
 
-    /* ── Header ── */
+    /* Header */
     header {
       border-bottom: 1px solid #1e1e1e;
-      padding: 0 32px;
-      height: 52px;
-      display: flex;
-      align-items: center;
-      gap: 24px;
-      position: sticky; top: 0;
-      background: #0f0f0f;
-      z-index: 10;
+      padding: 0 32px; height: 52px;
+      display: flex; align-items: center; gap: 16px;
+      position: sticky; top: 0; background: #0f0f0f; z-index: 10;
     }
-    .site-title { font-size: 15px; font-weight: 700; color: #fff; }
-    nav { display: flex; gap: 4px; margin-left: 8px; }
-    nav a {
-      padding: 5px 12px;
-      border-radius: 6px;
-      font-size: 13px;
-      color: #666;
-      transition: all 0.15s;
-    }
-    nav a:hover { color: #ccc; background: #1a1a1a; }
-    nav a.active { color: #fff; background: #222; }
+    .site-title { font-size: 15px; font-weight: 700; color: #fff; letter-spacing: -0.01em; }
+    .site-sub { font-size: 12px; color: #444; }
     .header-right { margin-left: auto; display: flex; gap: 10px; align-items: center; }
-    button.crawl-btn {
-      padding: 6px 14px;
-      font-size: 12px;
-      background: #1a1a1a;
-      border: 1px solid #2a2a2a;
-      border-radius: 6px;
-      color: #666;
-      cursor: pointer;
-      transition: all 0.15s;
+    .crawl-btn {
+      padding: 6px 14px; font-size: 12px;
+      background: transparent; border: 1px solid #2a2a2a;
+      border-radius: 6px; color: #555; cursor: pointer; transition: all 0.15s;
     }
-    button.crawl-btn:hover { border-color: #444; color: #ccc; }
-    button.crawl-btn.running { color: #4ade80; border-color: #4ade80; }
+    .crawl-btn:hover { border-color: #444; color: #ccc; }
+    .crawl-btn.running { border-color: #4ade80; color: #4ade80; }
 
-    /* ── Layout ── */
-    .layout { display: grid; grid-template-columns: 1fr 380px; max-width: 1200px; margin: 0 auto; min-height: calc(100vh - 52px); }
-
-    /* ── Article list ── */
-    .list { border-right: 1px solid #1e1e1e; padding: 24px; }
-    .list-empty { color: #444; font-size: 14px; padding: 40px 0; text-align: center; }
-
-    .article-card {
-      border: 1px solid #1e1e1e;
-      border-radius: 10px;
-      padding: 20px;
-      margin-bottom: 12px;
-      cursor: pointer;
-      transition: border-color 0.15s, background 0.15s;
-    }
-    .article-card:hover { border-color: #2a2a2a; background: #141414; }
-    .article-card.active { border-color: #333; background: #161616; }
-
-    .card-meta {
-      font-size: 11px;
-      color: #444;
-      margin-bottom: 8px;
-      display: flex;
-      gap: 10px;
-    }
-    .card-lang {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.05em;
-      padding: 2px 6px;
-      border-radius: 4px;
-      background: #1e1e1e;
-      color: #555;
-    }
-    .card-title {
-      font-size: 14px;
-      font-weight: 600;
-      color: #ddd;
-      line-height: 1.4;
-      margin-bottom: 10px;
-    }
-    .card-correction {
-      font-size: 13px;
-      color: #666;
-      line-height: 1.6;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
+    /* Layout */
+    .layout {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      max-width: 1280px; margin: 0 auto;
+      min-height: calc(100vh - 52px);
     }
 
-    /* ── Submit panel ── */
-    .submit-panel {
-      padding: 24px;
-      border-top: 1px solid #1e1e1e;
-    }
-    .submit-title {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #444;
-      margin-bottom: 14px;
-    }
-    textarea, input[type=text] {
-      width: 100%;
-      background: #141414;
-      border: 1px solid #222;
-      border-radius: 8px;
-      color: #e8e8e8;
-      font-size: 13px;
-      line-height: 1.6;
-      padding: 10px 12px;
-      font-family: inherit;
-      outline: none;
-      transition: border-color 0.15s;
-      resize: vertical;
-    }
-    textarea:focus, input[type=text]:focus { border-color: #333; }
-    textarea::placeholder, input::placeholder { color: #333; }
-    .submit-news { min-height: 80px; margin-bottom: 10px; }
-    .submit-row { display: flex; gap: 8px; align-items: center; }
-    .lang-toggle { display: flex; border: 1px solid #222; border-radius: 6px; overflow: hidden; }
-    .lang-toggle button {
-      padding: 7px 12px; font-size: 12px; background: transparent;
-      border: none; color: #555; cursor: pointer; transition: all 0.15s;
-    }
-    .lang-toggle button.active { background: #fff; color: #000; font-weight: 600; }
-    button.run-btn {
-      padding: 8px 18px; background: #fff; color: #000;
-      border: none; border-radius: 7px; font-size: 13px;
-      font-weight: 600; cursor: pointer; white-space: nowrap;
-      transition: opacity 0.15s; margin-left: auto;
-    }
-    button.run-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-
-    /* ── Detail panel ── */
-    .detail {
-      padding: 28px 24px;
+    /* Left: article list */
+    .sidebar {
+      border-right: 1px solid #1e1e1e;
+      display: flex; flex-direction: column;
+      height: calc(100vh - 52px);
       position: sticky; top: 52px;
-      max-height: calc(100vh - 52px);
-      overflow-y: auto;
     }
-    .detail-empty {
-      color: #333; font-size: 14px;
+    .article-list {
+      flex: 1; overflow-y: auto;
+      padding: 16px;
+    }
+    .list-empty {
+      color: #333; font-size: 13px;
+      text-align: center; padding: 48px 0;
+    }
+    .article-card {
+      padding: 16px; border-radius: 8px;
+      cursor: pointer; transition: background 0.1s;
+      border: 1px solid transparent;
+      margin-bottom: 4px;
+    }
+    .article-card:hover { background: #141414; }
+    .article-card.active { background: #161616; border-color: #2a2a2a; }
+    .card-date { font-size: 11px; color: #444; margin-bottom: 6px; }
+    .card-title { font-size: 13px; font-weight: 600; color: #ccc; line-height: 1.4; margin-bottom: 8px; }
+    .card-preview {
+      font-size: 12px; color: #555; line-height: 1.5;
+      display: -webkit-box; -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical; overflow: hidden;
+    }
+
+    /* Manual submit */
+    .submit-area {
+      border-top: 1px solid #1e1e1e;
+      padding: 16px;
+    }
+    .submit-label { font-size: 11px; color: #444; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+    textarea {
+      width: 100%; background: #111; border: 1px solid #222;
+      border-radius: 7px; color: #e8e8e8; font-size: 13px;
+      line-height: 1.6; padding: 10px 12px; font-family: inherit;
+      outline: none; resize: none; min-height: 72px;
+      transition: border-color 0.15s;
+    }
+    textarea:focus { border-color: #333; }
+    textarea::placeholder { color: #333; }
+    .submit-row { display: flex; justify-content: flex-end; margin-top: 8px; }
+    .run-btn {
+      padding: 8px 20px; background: #fff; color: #000;
+      border: none; border-radius: 7px; font-size: 13px;
+      font-weight: 600; cursor: pointer; transition: opacity 0.15s;
+    }
+    .run-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    /* Right: detail */
+    .detail {
+      padding: 36px 40px;
+      overflow-y: auto;
+      max-height: calc(100vh - 52px);
+    }
+    .detail-placeholder {
+      color: #2a2a2a; font-size: 13px;
       display: flex; align-items: center; justify-content: center;
       height: 200px;
     }
-    .detail-title { font-size: 16px; font-weight: 700; color: #fff; line-height: 1.4; margin-bottom: 6px; }
-    .detail-meta { font-size: 12px; color: #444; margin-bottom: 24px; }
+    .detail-title {
+      font-size: 20px; font-weight: 700; color: #fff;
+      line-height: 1.3; margin-bottom: 8px;
+    }
+    .detail-meta { font-size: 12px; color: #444; margin-bottom: 32px; }
     .detail-meta a { color: #555; text-decoration: underline; text-underline-offset: 3px; }
-    .detail-meta a:hover { color: #888; }
+    .detail-meta a:hover { color: #999; }
 
     .section-label {
-      font-size: 10px; font-weight: 700;
-      letter-spacing: 0.1em; text-transform: uppercase;
-      margin-bottom: 10px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; margin-bottom: 12px;
     }
     .fake-label { color: #555; }
     .correction-label { color: #4ade80; }
-
     .section-body {
-      font-size: 14px; line-height: 1.75;
-      margin-bottom: 24px; color: #bbb;
-      white-space: pre-wrap;
+      font-size: 15px; line-height: 1.8; color: #999;
+      white-space: pre-wrap; margin-bottom: 32px;
     }
     .correction-body { color: #e8e8e8; }
-    .divider { border: none; border-top: 1px solid #1e1e1e; margin: 20px 0; }
+    hr { border: none; border-top: 1px solid #1e1e1e; margin: 28px 0; }
 
-    /* ── Feedback ── */
-    .feedback-label { font-size: 11px; color: #444; margin-bottom: 10px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
-    .feedback-btns { display: flex; gap: 8px; margin-bottom: 14px; }
+    /* Feedback */
+    .feedback-label { font-size: 11px; color: #444; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 12px; }
+    .feedback-btns { display: flex; gap: 8px; margin-bottom: 16px; }
     .fb-btn {
-      padding: 6px 14px; border-radius: 6px; font-size: 12px;
-      border: 1px solid #222; background: transparent; color: #666;
-      cursor: pointer; transition: all 0.15s;
+      padding: 6px 16px; border-radius: 6px; font-size: 12px;
+      border: 1px solid #222; background: transparent;
+      color: #666; cursor: pointer; transition: all 0.15s;
     }
     .fb-btn:hover { border-color: #444; color: #bbb; }
     .fb-btn.good { border-color: #4ade80; color: #4ade80; }
-    .correction-form { display: none; }
-    .correction-form.visible { display: flex; flex-direction: column; gap: 8px; }
-    .correction-form textarea { min-height: 60px; }
-    button.save-btn {
-      align-self: flex-end; padding: 7px 16px;
+    .fb-form { display: none; flex-direction: column; gap: 8px; }
+    .fb-form.visible { display: flex; }
+    .fb-input {
+      width: 100%; background: #111; border: 1px solid #222;
+      border-radius: 7px; color: #e8e8e8; font-size: 13px;
+      padding: 9px 12px; font-family: inherit; outline: none;
+      transition: border-color 0.15s;
+    }
+    .fb-input:focus { border-color: #333; }
+    .fb-input::placeholder { color: #333; }
+    .save-btn {
+      align-self: flex-end; padding: 7px 18px;
       background: #4ade80; color: #000; border: none;
       border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;
     }
-    .saved-msg { font-size: 12px; color: #4ade80; display: none; margin-top: 6px; }
+    .saved-msg { font-size: 12px; color: #4ade80; margin-top: 8px; display: none; }
 
-    /* ── Loading ── */
+    /* Loading */
     .loading-overlay {
       display: none; position: fixed; inset: 0;
-      background: rgba(15,15,15,0.8); backdrop-filter: blur(4px);
-      align-items: center; justify-content: center;
-      z-index: 100;
+      background: rgba(15,15,15,0.85); backdrop-filter: blur(6px);
+      align-items: center; justify-content: center; z-index: 100;
     }
-    .loading-overlay.visible { display: flex; }
-    .loading-box { text-align: center; }
-    .loading-box p { font-size: 14px; color: #555; margin-top: 12px; }
+    .loading-overlay.on { display: flex; }
     .spinner {
-      width: 32px; height: 32px; border: 2px solid #222;
+      width: 28px; height: 28px; border: 2px solid #1e1e1e;
       border-top-color: #fff; border-radius: 50%;
-      animation: spin 0.8s linear infinite; margin: 0 auto;
+      animation: spin 0.75s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { font-size: 13px; color: #555; margin-top: 14px; }
+    .loading-box { text-align: center; }
   </style>
 </head>
 <body>
 
 <header>
-  <span class="site-title">矫正器</span>
-  <nav>
-    <a href="/?lang=all" class="{{ 'active' if lang == 'all' else '' }}">全部</a>
-    <a href="/?lang=en"  class="{{ 'active' if lang == 'en'  else '' }}">English</a>
-    <a href="/?lang=zh"  class="{{ 'active' if lang == 'zh'  else '' }}">中文</a>
-  </nav>
+  <span class="site-title">The Corrector</span>
+  <span class="site-sub">Bluesky news · X fake reviews · Yang Fei's voice</span>
   <div class="header-right">
-    <button class="crawl-btn" id="crawl-btn" onclick="triggerCrawl()">抓取新新闻</button>
+    <button class="crawl-btn" id="crawl-btn" onclick="triggerCrawl()">Fetch new articles</button>
   </div>
 </header>
 
 <div class="layout">
-  <!-- Article list + manual submit -->
-  <div style="display:flex; flex-direction:column; justify-content:space-between;">
-    <div class="list">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="article-list" id="article-list">
       {% if articles %}
         {% for a in articles %}
-        <div class="article-card" id="card-{{ a.id }}" onclick="showDetail({{ a.id }})">
-          <div class="card-meta">
-            <span class="card-lang">{{ a.lang.upper() }}</span>
-            <span>{{ a.created_at[:16] }}</span>
-          </div>
+        <div class="article-card" id="card-{{ a.id }}" onclick="selectArticle({{ a.id }})">
+          <div class="card-date">{{ a.created_at[:16] if a.created_at else '' }}</div>
           <div class="card-title">{{ a.title }}</div>
-          <div class="card-correction">{{ a.correction }}</div>
+          <div class="card-preview">{{ a.correction }}</div>
         </div>
         {% endfor %}
       {% else %}
-        <div class="list-empty">暂无文章，点击「抓取新新闻」开始</div>
+        <div class="list-empty">No articles yet.<br>Click "Fetch new articles" to start.</div>
       {% endif %}
     </div>
 
-    <!-- Manual submit -->
-    <div class="submit-panel">
-      <div class="submit-title">手动提交新闻</div>
-      <textarea id="manual-news" class="submit-news" placeholder="粘贴新闻原文…"></textarea>
+    <div class="submit-area">
+      <div class="submit-label">Submit manually</div>
+      <textarea id="manual-news" placeholder="Paste news content here…"></textarea>
       <div class="submit-row">
-        <div class="lang-toggle">
-          <button id="btn-en" class="active" onclick="setManualLang('en')">EN</button>
-          <button id="btn-zh" onclick="setManualLang('zh')">中文</button>
-        </div>
-        <button class="run-btn" id="manual-run" onclick="submitManual()">运行</button>
+        <button class="run-btn" id="run-btn" onclick="submitManual()">Run</button>
       </div>
     </div>
   </div>
 
   <!-- Detail panel -->
-  <div class="detail" id="detail-panel">
-    <div class="detail-empty">← 选择一篇文章</div>
+  <div class="detail" id="detail">
+    <div class="detail-placeholder">← Select an article</div>
   </div>
+
 </div>
 
-<!-- Loading overlay -->
 <div class="loading-overlay" id="loading">
   <div class="loading-box">
     <div class="spinner"></div>
-    <p id="loading-msg">分析中…</p>
+    <div class="loading-text" id="loading-text">Analyzing…</div>
   </div>
 </div>
 
 <script>
-  // Pre-load articles data from server
   const articles = {{ articles | tojson }};
-  let manualLang = 'en';
   let currentFakeReview = '';
-  let currentLang = 'en';
 
-  function setManualLang(lang) {
-    manualLang = lang;
-    document.getElementById('btn-en').className = lang === 'en' ? 'active' : '';
-    document.getElementById('btn-zh').className = lang === 'zh' ? 'active' : '';
-  }
-
-  function showDetail(id) {
+  function selectArticle(id) {
     document.querySelectorAll('.article-card').forEach(el => el.classList.remove('active'));
     document.getElementById('card-' + id)?.classList.add('active');
     const a = articles.find(x => x.id === id);
-    if (!a) return;
-    currentFakeReview = a.fake_review;
-    currentLang = a.lang;
-    renderDetail(a.title, a.url, a.fake_review, a.correction, a.lang, a.created_at);
+    if (a) renderDetail(a);
   }
 
-  function renderDetail(title, url, fakeReview, correction, lang, createdAt) {
-    const isZh = lang === 'zh';
-    document.getElementById('detail-panel').innerHTML = `
-      <div class="detail-title">${esc(title)}</div>
+  function renderDetail(a) {
+    currentFakeReview = a.fake_review || '';
+    document.getElementById('detail').innerHTML = `
+      <div class="detail-title">${esc(a.title)}</div>
       <div class="detail-meta">
-        ${ url ? `<a href="${esc(url)}" target="_blank" rel="noopener">原文 ↗</a> · ` : '' }
-        ${createdAt ? createdAt.slice(0,16) : ''}
+        ${ a.url ? `<a href="${esc(a.url)}" target="_blank" rel="noopener">Source ↗</a> · ` : '' }
+        ${ a.created_at ? a.created_at.slice(0,16) : '' }
       </div>
 
-      <div class="section-label fake-label">${ isZh ? 'Fake Review — X 上的主流叙事' : 'Fake Review — dominant narrative on X' }</div>
-      <div class="section-body">${esc(fakeReview)}</div>
+      <div class="section-label fake-label">Fake Review — dominant narrative on X</div>
+      <div class="section-body">${esc(a.fake_review)}</div>
 
-      <hr class="divider">
+      <hr>
 
-      <div class="section-label correction-label">${ isZh ? '矫正' : 'Correction' }</div>
-      <div class="section-body correction-body">${esc(correction)}</div>
+      <div class="section-label correction-label">Correction</div>
+      <div class="section-body correction-body">${esc(a.correction)}</div>
 
-      <hr class="divider">
+      <hr>
 
-      <div class="feedback-label">${ isZh ? 'Fake Review 识别准确吗？' : 'Was the fake review identified correctly?' }</div>
+      <div class="feedback-label">Was the fake review identified correctly?</div>
       <div class="feedback-btns">
-        <button class="fb-btn" id="fb-good" onclick="markGood()">${ isZh ? '✓ 准确' : '✓ Correct' }</button>
-        <button class="fb-btn" id="fb-wrong" onclick="showFbForm()">${ isZh ? '✗ 识别错了' : '✗ Wrong' }</button>
+        <button class="fb-btn" id="fb-good" onclick="markGood()">✓ Correct</button>
+        <button class="fb-btn" id="fb-wrong" onclick="showFbForm()">✗ Wrong</button>
       </div>
-      <div class="correction-form" id="fb-form">
-        <input type="text" id="fb-correct" placeholder="${ isZh ? '正确的 Fake Review 应该是…' : 'The real fake review should be…' }">
-        <textarea id="fb-reason" placeholder="${ isZh ? '原因（选填）' : 'Reason (optional)' }"></textarea>
-        <button class="save-btn" onclick="saveFeedback()">${ isZh ? '保存' : 'Save' }</button>
+      <div class="fb-form" id="fb-form">
+        <input class="fb-input" id="fb-correct" placeholder="The real fake review should be…">
+        <input class="fb-input" id="fb-reason" placeholder="Why? (optional)">
+        <button class="save-btn" onclick="saveFeedback()">Save correction</button>
       </div>
-      <div class="saved-msg" id="fb-saved">${ isZh ? '✓ 已保存' : '✓ Saved' }</div>
+      <div class="saved-msg" id="fb-saved">✓ Saved — will be used next time</div>
+    `;
+  }
+
+  function renderManualResult(data) {
+    currentFakeReview = data.fake_review || '';
+    document.getElementById('detail').innerHTML = `
+      <div class="detail-title">Manual submission</div>
+      <div class="detail-meta">Just now</div>
+
+      <div class="section-label fake-label">Fake Review — dominant narrative on X</div>
+      <div class="section-body">${esc(data.fake_review)}</div>
+
+      <hr>
+
+      <div class="section-label correction-label">Correction</div>
+      <div class="section-body correction-body">${esc(data.correction)}</div>
+
+      <hr>
+
+      <div class="feedback-label">Was the fake review identified correctly?</div>
+      <div class="feedback-btns">
+        <button class="fb-btn" id="fb-good" onclick="markGood()">✓ Correct</button>
+        <button class="fb-btn" id="fb-wrong" onclick="showFbForm()">✗ Wrong</button>
+      </div>
+      <div class="fb-form" id="fb-form">
+        <input class="fb-input" id="fb-correct" placeholder="The real fake review should be…">
+        <input class="fb-input" id="fb-reason" placeholder="Why? (optional)">
+        <button class="save-btn" onclick="saveFeedback()">Save correction</button>
+      </div>
+      <div class="saved-msg" id="fb-saved">✓ Saved — will be used next time</div>
     `;
   }
 
   function markGood() {
     document.getElementById('fb-good').className = 'fb-btn good';
-    document.getElementById('fb-form').className = 'correction-form';
+    document.getElementById('fb-form').className = 'fb-form';
   }
-
   function showFbForm() {
     document.getElementById('fb-good').className = 'fb-btn';
-    document.getElementById('fb-form').className = 'correction-form visible';
+    document.getElementById('fb-form').className = 'fb-form visible';
   }
-
   async function saveFeedback() {
     const correct = document.getElementById('fb-correct').value.trim();
     const reason = document.getElementById('fb-reason').value.trim();
     if (!correct) return;
     await fetch('/feedback', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ lang: currentLang, wrong: currentFakeReview, correct, reason }),
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({wrong: currentFakeReview, correct, reason}),
     });
     document.getElementById('fb-saved').style.display = 'block';
-    document.getElementById('fb-form').className = 'correction-form';
+    document.getElementById('fb-form').className = 'fb-form';
   }
 
   async function submitManual() {
     const news = document.getElementById('manual-news').value.trim();
     if (!news) return;
-    showLoading('分析中…');
+    showLoading('Analyzing…');
     try {
       const resp = await fetch('/analyze', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ news, lang: manualLang }),
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({news}),
       });
       const data = await resp.json();
-      currentFakeReview = data.fake_review;
-      currentLang = data.lang;
-      renderDetail('手动提交', '', data.fake_review, data.correction, data.lang, '');
+      renderManualResult(data);
     } catch(e) { alert('Error: ' + e.message); }
     finally { hideLoading(); }
   }
@@ -379,28 +334,29 @@
   async function triggerCrawl() {
     const btn = document.getElementById('crawl-btn');
     btn.className = 'crawl-btn running';
-    btn.textContent = '抓取中…';
+    btn.textContent = 'Fetching…';
     try {
-      await fetch('/crawl', { method: 'POST' });
-      setTimeout(() => { btn.className = 'crawl-btn'; btn.textContent = '抓取新新闻'; }, 3000);
-    } catch(e) { btn.className = 'crawl-btn'; btn.textContent = '抓取新新闻'; }
+      await fetch('/crawl', {method: 'POST'});
+      btn.textContent = 'Running in background…';
+      setTimeout(() => { btn.className = 'crawl-btn'; btn.textContent = 'Fetch new articles'; }, 5000);
+    } catch(e) { btn.className = 'crawl-btn'; btn.textContent = 'Fetch new articles'; }
   }
 
   function showLoading(msg) {
-    document.getElementById('loading-msg').textContent = msg;
-    document.getElementById('loading').className = 'loading-overlay visible';
-    document.getElementById('manual-run').disabled = true;
+    document.getElementById('loading-text').textContent = msg;
+    document.getElementById('loading').className = 'loading-overlay on';
+    document.getElementById('run-btn').disabled = true;
   }
   function hideLoading() {
     document.getElementById('loading').className = 'loading-overlay';
-    document.getElementById('manual-run').disabled = false;
+    document.getElementById('run-btn').disabled = false;
   }
   function esc(s) {
-    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
   document.addEventListener('keydown', e => {
-    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') submitManual();
+    if ((e.metaKey||e.ctrlKey) && e.key==='Enter') submitManual();
   });
 </script>
 </body>

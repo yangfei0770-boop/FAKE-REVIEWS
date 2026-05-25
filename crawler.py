@@ -1,59 +1,85 @@
 import requests
 from bs4 import BeautifulSoup
-from ddgs import DDGS
 
-BSKY_API = "https://public.api.bsky.app/xrpc"
-HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; news-corrector/1.0)"}
+HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
 
-SEARCH_QUERIES = {
-    "en": ["news politics", "breaking news", "china tech sanctions", "women rights", "war conflict"],
-    "zh": ["中国 新闻", "政治 事件", "女性 权利", "科技 制裁", "战争 冲突"],
-}
+# ── Bluesky: news source via trending feed ────────────────────────────────────
 
-# ── Bluesky: news source ──────────────────────────────────────────────────────
+BLUESKY_FEEDS = [
+    "at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot",
+    "at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/hot-classic",
+    "at://did:plc:tenurhgjptubkk5zf5qhi3og/app.bsky.feed.generator/catch-up",
+    "at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/with-friends",
+]
 
-def search_bluesky(query: str, limit: int = 20) -> list[dict]:
-    try:
-        resp = requests.get(
-            f"{BSKY_API}/app.bsky.feed.searchPosts",
-            params={"q": query, "limit": limit, "sort": "top"},
-            timeout=10,
-        )
-        resp.raise_for_status()
-        posts = resp.json().get("posts", [])
-    except Exception as e:
-        print(f"Bluesky search error: {e}")
-        return []
-
+def get_bluesky_news(limit: int = 30) -> list[dict]:
+    """Fetch trending posts from Bluesky, return those with article links."""
     results = []
-    for post in posts:
-        record = post.get("record", {})
-        embed = record.get("embed", {}) or post.get("embed", {})
-        url = None
-        if embed:
+    seen = set()
+
+    for feed_uri in BLUESKY_FEEDS:
+        try:
+            resp = requests.get(
+                "https://public.api.bsky.app/xrpc/app.bsky.feed.getFeed",
+                params={"feed": feed_uri, "limit": limit},
+                timeout=15,
+            )
+            if not resp.ok:
+                continue
+            items = resp.json().get("feed", [])
+        except Exception as e:
+            print(f"Bluesky feed error: {e}")
+            continue
+
+        for item in items:
+            post = item.get("post", {})
+            record = post.get("record", {})
+            embed = record.get("embed", {}) or post.get("embed", {})
+            if not embed:
+                continue
             external = embed.get("external") or embed.get("media", {}).get("external", {})
-            if external:
-                url = external.get("uri")
-        if url and url.startswith("http"):
-            results.append({"url": url, "likes": post.get("likeCount", 0)})
+            if not external:
+                continue
+            url = external.get("uri", "")
+            if not url.startswith("http") or url in seen:
+                continue
+            seen.add(url)
+            results.append({
+                "url": url,
+                "title": external.get("title", ""),
+                "likes": post.get("likeCount", 0),
+            })
 
     results.sort(key=lambda x: x["likes"], reverse=True)
     return results
 
 
-# ── X: fake review source ─────────────────────────────────────────────────────
+# ── X comments via DuckDuckGo HTML ────────────────────────────────────────────
 
-def fetch_x_comments(keyword: str, max_results: int = 10) -> str:
-    results = []
-    try:
-        with DDGS() as ddgs:
-            for r in ddgs.text(f"site:x.com {keyword}", max_results=max_results):
-                snippet = r.get("body", "").strip()
-                if snippet:
-                    results.append(snippet)
-    except Exception as e:
-        print(f"X search error: {e}")
-    return "\n---\n".join(results) if results else "No X comments found."
+def fetch_x_comments(keyword: str, max_results: int = 8) -> str:
+    """Search X posts about a topic via DuckDuckGo HTML (no API key needed)."""
+    # Try full title first, then stripped-down keyword
+    queries = [
+        f"site:x.com {keyword}",
+        f"site:twitter.com {keyword}",
+        f"site:x.com {' '.join(keyword.split()[:5])}",  # first 5 words only
+    ]
+    for query in queries:
+        try:
+            resp = requests.get(
+                "https://html.duckduckgo.com/html/",
+                params={"q": query},
+                headers=HEADERS,
+                timeout=15,
+            )
+            soup = BeautifulSoup(resp.text, "html.parser")
+            snippets = [el.get_text(strip=True) for el in soup.select(".result__snippet")]
+            snippets = [s for s in snippets if len(s) > 30][:max_results]
+            if snippets:
+                return "\n---\n".join(snippets)
+        except Exception as e:
+            print(f"X search error ({query[:40]}): {e}")
+    return "No X comments found."
 
 
 # ── Article fetcher ───────────────────────────────────────────────────────────
@@ -78,7 +104,10 @@ def fetch_article(url: str):
             el = soup.select_one(selector)
             if el:
                 paragraphs = el.find_all("p")
-                text = " ".join(p.get_text(strip=True) for p in paragraphs if len(p.get_text(strip=True)) > 40)
+                text = " ".join(
+                    p.get_text(strip=True) for p in paragraphs
+                    if len(p.get_text(strip=True)) > 40
+                )
                 if len(text) > 200:
                     content = text[:3000]
                     break
@@ -87,47 +116,43 @@ def fetch_article(url: str):
             return None
         return {"title": title, "content": content, "url": url}
     except Exception as e:
-        print(f"Fetch error {url}: {e}")
+        print(f"Fetch error {url[:60]}: {e}")
         return None
 
 
 # ── Main crawl ────────────────────────────────────────────────────────────────
 
-def crawl(lang: str = "en", max_articles: int = 5) -> list[dict]:
+def crawl(max_articles: int = 10) -> list[dict]:
     """
-    Find news via Bluesky, get fake review comments from X.
-    Returns list of {title, content, url, source, lang, x_comments}
+    Pull trending news from Bluesky, fetch article content,
+    get X comments. Returns list of article dicts.
     """
     from database import url_exists
 
-    queries = SEARCH_QUERIES.get(lang, SEARCH_QUERIES["en"])
-    seen_urls = set()
+    posts = get_bluesky_news(limit=50)
+    print(f"[crawl] Bluesky returned {len(posts)} posts with links")
+
     articles = []
+    for post in posts:
+        url = post["url"]
+        if url_exists(url):
+            continue
 
-    for query in queries:
-        posts = search_bluesky(query, limit=15)
-        for post in posts:
-            url = post["url"]
-            if url in seen_urls or url_exists(url):
-                continue
-            seen_urls.add(url)
+        article = fetch_article(url)
+        if not article:
+            continue
 
-            article = fetch_article(url)
-            if not article:
-                continue
+        keyword = article["title"][:80]
+        x_comments = fetch_x_comments(keyword)
 
-            # X comments about this article as fake review source
-            x_comments = fetch_x_comments(article["title"][:80], max_results=10)
+        articles.append({
+            **article,
+            "source": "bluesky",
+            "x_comments": x_comments,
+        })
+        print(f"[crawl] OK: {article['title'][:60]}")
 
-            articles.append({
-                **article,
-                "lang": lang,
-                "source": "bluesky",
-                "x_comments": x_comments,
-            })
-            print(f"  Crawled: {article['title'][:60]}")
-
-            if len(articles) >= max_articles:
-                return articles
+        if len(articles) >= max_articles:
+            break
 
     return articles
