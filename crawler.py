@@ -93,10 +93,9 @@ def get_bluesky_news(limit: int = 30) -> list[dict]:
 
 def _fetch_x_tweets(keyword: str, max_results: int = 10) -> list:
     """Search X for recent tweets. Returns list of text strings."""
-    username = os.environ.get("X_USERNAME", "")
-    email = os.environ.get("X_EMAIL", "")
-    password = os.environ.get("X_PASSWORD", "")
-    if not (username and password):
+    auth_token = os.environ.get("X_AUTH_TOKEN", "")
+    ct0 = os.environ.get("X_CT0", "")
+    if not (auth_token and ct0):
         return []
 
     try:
@@ -107,34 +106,13 @@ def _fetch_x_tweets(keyword: str, max_results: int = 10) -> list:
 
     async def _run():
         client = Client("en-US")
-        with _x_lock:
-            if X_COOKIES_FILE.exists():
-                client.load_cookies(str(X_COOKIES_FILE))
-            else:
-                await client.login(
-                    auth_info_1=username,
-                    auth_info_2=email,
-                    password=password,
-                )
-                client.save_cookies(str(X_COOKIES_FILE))
-
-        try:
-            tweets = await client.search_tweet(keyword[:100], "Latest", count=25)
-        except Exception:
-            # Cookies may have expired — re-login once
-            X_COOKIES_FILE.unlink(missing_ok=True)
-            await client.login(
-                auth_info_1=username,
-                auth_info_2=email,
-                password=password,
-            )
-            client.save_cookies(str(X_COOKIES_FILE))
-            tweets = await client.search_tweet(keyword[:100], "Latest", count=25)
-
+        # Inject browser cookies directly — no password login needed
+        client.http.cookies.update({"auth_token": auth_token, "ct0": ct0})
+        client.http.headers.update({"x-csrf-token": ct0})
+        tweets = await client.search_tweet(keyword[:100], "Latest", count=25)
         snippets = []
         for t in tweets:
             text = t.text.strip()
-            # skip retweets and very short posts
             if len(text) > 40 and not text.startswith("RT @"):
                 snippets.append(text)
         return snippets[:max_results]
