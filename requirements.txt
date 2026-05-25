@@ -5,3 +5,4 @@ apscheduler
 ddgs
 requests
 beautifulsoup4
+twikit

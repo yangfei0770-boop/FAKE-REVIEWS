@@ -1,5 +1,13 @@
+import asyncio
+import os
+import threading
+from pathlib import Path
+
 import requests
 from bs4 import BeautifulSoup
+
+X_COOKIES_FILE = Path(__file__).parent / "x_cookies.json"
+_x_lock = threading.Lock()
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
 
@@ -81,14 +89,75 @@ def get_bluesky_news(limit: int = 30) -> list[dict]:
     return results
 
 
-# ── X comments via DuckDuckGo HTML ────────────────────────────────────────────
+# ── X (Twitter) search via twikit ─────────────────────────────────────────────
+
+def _fetch_x_tweets(keyword: str, max_results: int = 10) -> list:
+    """Search X for recent tweets. Returns list of text strings."""
+    username = os.environ.get("X_USERNAME", "")
+    email = os.environ.get("X_EMAIL", "")
+    password = os.environ.get("X_PASSWORD", "")
+    if not (username and password):
+        return []
+
+    try:
+        from twikit import Client
+    except ImportError:
+        print("twikit not installed")
+        return []
+
+    async def _run():
+        client = Client("en-US")
+        with _x_lock:
+            if X_COOKIES_FILE.exists():
+                client.load_cookies(str(X_COOKIES_FILE))
+            else:
+                await client.login(
+                    auth_info_1=username,
+                    auth_info_2=email,
+                    password=password,
+                )
+                client.save_cookies(str(X_COOKIES_FILE))
+
+        try:
+            tweets = await client.search_tweet(keyword[:100], "Latest", count=25)
+        except Exception:
+            # Cookies may have expired — re-login once
+            X_COOKIES_FILE.unlink(missing_ok=True)
+            await client.login(
+                auth_info_1=username,
+                auth_info_2=email,
+                password=password,
+            )
+            client.save_cookies(str(X_COOKIES_FILE))
+            tweets = await client.search_tweet(keyword[:100], "Latest", count=25)
+
+        snippets = []
+        for t in tweets:
+            text = t.text.strip()
+            # skip retweets and very short posts
+            if len(text) > 40 and not text.startswith("RT @"):
+                snippets.append(text)
+        return snippets[:max_results]
+
+    try:
+        return asyncio.run(_run())
+    except Exception as e:
+        print(f"X search error: {e}")
+        return []
+
 
 def fetch_social_reactions(keyword: str, max_results: int = 8) -> str:
     """
-    Fetch social reactions to a news topic from Reddit (free, no auth needed).
-    Falls back to Bluesky search if Reddit returns nothing.
+    Fetch social reactions to a news topic.
+    Priority: X (twikit) → Reddit → Bluesky search
     """
-    # Try Reddit first
+    # 1. X via twikit
+    snippets = _fetch_x_tweets(keyword, max_results=max_results)
+    if snippets:
+        print(f"[social] X returned {len(snippets)} tweets")
+        return "\n---\n".join(snippets)
+
+    # 2. Reddit (free, no auth)
     try:
         resp = requests.get(
             "https://www.reddit.com/search.json",
@@ -106,11 +175,12 @@ def fetch_social_reactions(keyword: str, max_results: int = 8) -> str:
                 if len(text) > 40 and len(text) < 600:
                     snippets.append(text)
             if snippets:
+                print(f"[social] Reddit returned {len(snippets)} posts")
                 return "\n---\n".join(snippets[:max_results])
     except Exception as e:
         print(f"Reddit search error: {e}")
 
-    # Fallback: Bluesky search (sort=latest, no auth needed)
+    # 3. Bluesky search (sort=latest, no auth)
     try:
         resp = requests.get(
             "https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts",
@@ -122,6 +192,7 @@ def fetch_social_reactions(keyword: str, max_results: int = 8) -> str:
             snippets = [p.get("record", {}).get("text", "").strip() for p in posts]
             snippets = [s for s in snippets if len(s) > 30][:max_results]
             if snippets:
+                print(f"[social] Bluesky returned {len(snippets)} posts")
                 return "\n---\n".join(snippets)
     except Exception as e:
         print(f"Bluesky fallback error: {e}")
